@@ -1,14 +1,61 @@
 services:
   stats-server:
+    build: stats/stats-server
+    image: ewm-stats-server
+    container_name: stats-server
     ports:
       - "9090:9090"
+    depends_on:
+      stats-db:
+        condition: service_healthy
+    environment:
+      - SPRING_SQL_INIT_MODE=always
 
   stats-db:
     image: postgres:16.1
+    container_name: stats-db-postgres
+    volumes:
+      - ./stats/stats-server/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "6542:5432"
+    environment:
+      - POSTGRES_DB=stats
+      - POSTGRES_USER=stats
+      - POSTGRES_PASSWORD=stats
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
 
-  ewm-service:
+  main-service:
+    build: main-service
+    image: evm-main-service
+    container_name: main-service
+    depends_on:
+      ewm-db:
+        condition: service_healthy
     ports:
       - "8080:8080"
+    environment:
+      - EWM_STATS_SERVER_URL=http://stats-server:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm-main
+      - SPRING_DATASOURCE_USERNAME=main
+      - SPRING_DATASOURCE_PASSWORD=main
 
   ewm-db:
     image: postgres:16.1
+    container_name: ewm-db-postgres
+    volumes:
+      - ./main-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+    ports:
+      - "6543:5432"
+    environment:
+      - POSTGRES_DB=ewm-main
+      - POSTGRES_USER=main
+      - POSTGRES_PASSWORD=main
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
