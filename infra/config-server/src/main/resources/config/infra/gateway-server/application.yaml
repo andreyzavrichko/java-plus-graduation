@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: main_service_route
+          uri: lb://main-service
+          predicates:
+            - Path=/categories/**,/admin/**,/users/**,/events/**,/compilations/**
+
+        - id: stats_server_route
+          uri: lb://stats-server
+          predicates:
+            - Path=/hit/**,/stats/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive.DispatcherHandler: DEBUG
+
+management:
+  endpoint:
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health
