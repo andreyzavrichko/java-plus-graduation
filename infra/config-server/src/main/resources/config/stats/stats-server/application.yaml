@@ -1,0 +1,17 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:stats-db}:${POSTGRES_PORT:5432}/stats
+    username: ${POSTGRES_USER:stats}
+    password: ${POSTGRES_PASSWORD:stats}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+logging:
+  level:
+    root: INFO
