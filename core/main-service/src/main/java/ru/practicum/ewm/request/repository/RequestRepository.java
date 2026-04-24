@@ -12,7 +12,6 @@ import ru.practicum.ewm.user.model.User;
 
 import java.util.List;
 
-@Repository
 public interface RequestRepository extends JpaRepository<ParticipationRequest, Long>,
         QuerydslPredicateExecutor<ParticipationRequest>,
         RequestRepositoryCustom {

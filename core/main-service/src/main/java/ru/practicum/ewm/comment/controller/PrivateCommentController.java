@@ -20,7 +20,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(ApiPaths.Private.COMMENTS)
-@Validated
 @Slf4j
 public class PrivateCommentController {
     private final CommentService service;
