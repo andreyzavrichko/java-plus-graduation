@@ -11,22 +11,22 @@ import ru.practicum.ewm.sharing.constants.ApiPaths;
 
 import java.util.List;
 
-@Validated
 @RestController
-@RequiredArgsConstructor
 @RequestMapping(ApiPaths.Public.CATEGORIES)
+@RequiredArgsConstructor
+@Validated
 public class PublicCategoryController {
-    private final CategoryService service;
+    private final CategoryService categoryService;
 
     @GetMapping
     public List<CategoryDto> getCategories(
-            @RequestParam(value = "from", defaultValue = "0") @PositiveOrZero Integer from,
-            @RequestParam(value = "size", defaultValue = "10") @Positive Integer size) {
-        return service.getCategories(from, size);
+            @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+            @RequestParam(defaultValue = "10") @Positive Integer size) {
+        return categoryService.getCategories(from, size);
     }
 
-    @GetMapping("/{categoryId}")
-    public CategoryDto getCategoryById(@PathVariable Long categoryId) {
-        return service.getCategoryById(categoryId);
+    @GetMapping("/{catId}")
+    public CategoryDto getCategoryById(@PathVariable @Positive Long catId) {
+        return categoryService.getCategoryById(catId);
     }
 }

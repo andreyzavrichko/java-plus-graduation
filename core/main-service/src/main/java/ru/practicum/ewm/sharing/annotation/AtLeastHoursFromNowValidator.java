@@ -13,20 +13,14 @@ public class AtLeastHoursFromNowValidator
     private ChronoUnit unit;
 
     @Override
-    public void initialize(AtLeastHoursFromNow constraintAnnotation) {
-        this.hours = constraintAnnotation.hours();
-        this.unit = constraintAnnotation.unit();
+    public void initialize(AtLeastHoursFromNow a) {
+        this.hours = a.hours();
+        this.unit = a.unit();
     }
 
     @Override
-    public boolean isValid(LocalDateTime value, ConstraintValidatorContext context) {
-        if (value == null) {
-            return true;
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime minAllowedTime = now.minus(hours, unit);
-
-        return value.isAfter(minAllowedTime);
+    public boolean isValid(LocalDateTime value, ConstraintValidatorContext ctx) {
+        if (value == null) return true;
+        return value.isAfter(LocalDateTime.now().plus(hours, unit));
     }
 }

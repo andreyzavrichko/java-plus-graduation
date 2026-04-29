@@ -1,44 +1,43 @@
 package ru.practicum.ewm.category.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.dto.CreateCategoryDto;
 import ru.practicum.ewm.category.service.CategoryService;
 import ru.practicum.ewm.sharing.constants.ApiPaths;
 
-@Slf4j
 @RestController
-@RequiredArgsConstructor
 @RequestMapping(ApiPaths.Admin.CATEGORIES)
+@RequiredArgsConstructor
+@Validated
+@Slf4j
 public class AdminCategoryController {
-    private final CategoryService service;
+    private final CategoryService categoryService;
 
     @PostMapping
-    @ResponseStatus(value = HttpStatus.CREATED)
-    public CategoryDto create(@RequestBody @Valid CreateCategoryDto request) {
-        log.info("ADMIN: Create category {}", request);
-        CategoryDto result = service.addCategory(request);
-        log.info("ADMIN: Created category {}", result);
-        return result;
+    @ResponseStatus(HttpStatus.CREATED)
+    public CategoryDto addCategory(@Valid @RequestBody CreateCategoryDto dto) {
+        log.info("ADMIN: Add category: {}", dto.name());
+        return categoryService.addCategory(dto);
     }
 
     @PatchMapping("/{catId}")
-    public CategoryDto update(@PathVariable Long catId, @RequestBody @Valid CategoryDto categoryDto) {
-        log.info("ADMIN: Update category {}", categoryDto);
-        CategoryDto result = service.updateCategory(catId, categoryDto);
-        log.info("ADMIN: Updated category {}", result);
-        return result;
+    public CategoryDto updateCategory(@PathVariable @Positive Long catId,
+                                      @Valid @RequestBody CategoryDto dto) {
+        log.info("ADMIN: Update category {}", catId);
+        return categoryService.updateCategory(catId, dto);
     }
 
     @DeleteMapping("/{catId}")
-    @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long catId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCategory(@PathVariable @Positive Long catId) {
         log.info("ADMIN: Delete category {}", catId);
-        service.deleteCategory(catId);
-        log.info("ADMIN: Deleted category {}", catId);
+        categoryService.deleteCategory(catId);
     }
 }

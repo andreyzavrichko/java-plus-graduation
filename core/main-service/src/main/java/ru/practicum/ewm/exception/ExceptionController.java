@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import ru.practicum.ewm.StatsServerUnavailableException;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,86 +25,82 @@ public class ExceptionController {
             ConstraintViolationException.class,
             MethodArgumentNotValidException.class,
             MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class,
             HttpMessageNotReadableException.class
     })
-    public ResponseEntity<ApiError> handleSpringValidationExceptions(final Exception e) {
+    public ResponseEntity<ApiError> handleSpringValidation(final Exception e) {
         List<String> errors = switch (e) {
             case ConstraintViolationException cve -> cve.getConstraintViolations().stream()
-                    .map(ConstraintViolation::getMessage)
-                    .toList();
+                    .map(ConstraintViolation::getMessage).toList();
             case MethodArgumentNotValidException mnv -> mnv.getBindingResult().getFieldErrors().stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage).toList();
             case MethodArgumentTypeMismatchException mtm -> {
-                String typeName = mtm.getRequiredType() != null ?
-                        mtm.getRequiredType().getName() : "unknown";
-                yield List.of("Parameter '%s' should be of type %s".formatted(mtm.getName(), typeName));
+                String type = mtm.getRequiredType() != null ? mtm.getRequiredType().getName() : "unknown";
+                yield List.of("Parameter '%s' should be of type %s".formatted(mtm.getName(), type));
             }
-            case HttpMessageNotReadableException hmr -> {
-                String message = hmr.getMessage();
-                if (message != null && message.contains("Required request body is missing")) {
-                    yield List.of("Request body is required");
-                } else if (message != null && message.contains("JSON parse error")) {
-                    yield List.of("Invalid JSON format in request body");
-                } else {
-                    yield List.of("Invalid request body format");
-                }
-            }
+            case MissingServletRequestParameterException msrp ->
+                    List.of("Required parameter '%s' is not present".formatted(msrp.getParameterName()));
+            case HttpMessageNotReadableException ignored -> List.of("Invalid request body format");
             default -> List.of(e.getMessage());
         };
-        log.warn("Spring validation exception: {}", errors);
+        log.info("Validation error: {}", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiError.of(HttpStatus.BAD_REQUEST, "Validation Failed", errors));
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> handleValidationException(final ValidationException e) {
-        log.warn("Validation exception: {}", e.getMessage());
+    public ResponseEntity<ApiError> handleValidation(final ValidationException e) {
+        log.info("Validation: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiError.of(HttpStatus.BAD_REQUEST, "Validation Failed",
-                        Collections.singletonList(e.getMessage())));
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ApiError> handleConflictException(final ConflictException e) {
-        log.warn("Conflict exception: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiError.of(HttpStatus.CONFLICT, "Integrity constraint has been violated.",
-                        Collections.singletonList(e.getMessage())));
-    }
-
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiError> handleNotFoundException(final NotFoundException e) {
-        log.warn("NotFound exception: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiError.of(HttpStatus.NOT_FOUND, "The required object was not found.",
-                        Collections.singletonList(e.getMessage())));
-    }
-
-//    @ExceptionHandler
-//    public ResponseEntity<ApiError> handleException(final Exception e) {
-//        log.warn("Exception: {}", e.getMessage());
-//        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-//        return ResponseEntity.status(status)
-//                .body(ApiError.of(status, e.getMessage(),
-//                        Collections.singletonList(e.getMessage())));
-//    }
-
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ApiError> handleMissingParams(MissingServletRequestParameterException ex) {
-        log.warn("Missing request parameter: {}", ex.getParameterName());
-        String error = "Обязательный параметр '%s' отсутствует".formatted(ex.getParameterName());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiError.of(HttpStatus.BAD_REQUEST, "Validation Failed",
-                        Collections.singletonList(error)));
+                        List.of(e.getMessage())));
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiError> handleAccessException(final AccessException e) {
-        log.warn("Access exception: {}", e.getMessage());
+    public ResponseEntity<ApiError> handleAccess(final AccessException e) {
+        log.info("Access denied: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiError.of(HttpStatus.FORBIDDEN, "For the requested operation the conditions are not met.",
-                        Collections.singletonList(e.getMessage())));
+                .body(ApiError.of(HttpStatus.FORBIDDEN, e.getMessage(),
+                        List.of(e.getMessage())));
+    }
 
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleNotFound(final NotFoundException e) {
+        log.info("Not found: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiError.of(HttpStatus.NOT_FOUND, e.getMessage(),
+                        List.of(e.getMessage())));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleConflict(final ConflictException e) {
+        log.info("Conflict: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.of(HttpStatus.CONFLICT, e.getMessage(),
+                        List.of(e.getMessage())));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleServiceUnavailable(final ServiceUnavailableException e) {
+        log.error("Service unavailable: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiError.of(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(),
+                        List.of(e.getMessage())));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleStatsUnavailable(final StatsServerUnavailableException e) {
+        log.error("Stats server unavailable: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiError.of(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(),
+                        List.of(e.getMessage())));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiError> handleUnexpected(final Exception e) {
+        log.error("Unexpected exception: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(),
+                        Collections.singletonList(e.getMessage())));
     }
 }

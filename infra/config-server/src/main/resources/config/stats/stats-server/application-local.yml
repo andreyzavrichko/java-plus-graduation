@@ -1,9 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:6542/stats
-    username: stats
-    password: stats
-
-logging:
-  level:
-    root: DEBUG

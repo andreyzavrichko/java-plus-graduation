@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import ru.practicum.ewm.category.model.Category;
-import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -26,13 +25,10 @@ public class Event {
 
     @Column(nullable = false)
     private String title;
-
     @Column(nullable = false)
     private String annotation;
-
     @Column(nullable = false)
     private String description;
-
     @Column(nullable = false)
     private LocalDateTime eventDate;
 
@@ -42,20 +38,17 @@ public class Event {
 
     @Column(nullable = false)
     private Boolean paid;
-
     @Column(name = "participant_limit", nullable = false)
     private Integer participantLimit;
-
     @Column(name = "request_moderation", nullable = false)
     private Boolean requestModeration;
+
+    @Column(name = "initiator_id", nullable = false)
+    private Long initiatorId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id", nullable = false)
-    private User initiator;
 
     @Embedded
     private Location location;

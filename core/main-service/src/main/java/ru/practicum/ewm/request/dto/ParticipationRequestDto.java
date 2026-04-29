@@ -8,12 +8,7 @@ import static ru.practicum.ewm.sharing.constants.AppConstants.DATE_TIME_FORMAT;
 
 public record ParticipationRequestDto(
         Long id,
-
-        @JsonFormat(pattern = DATE_TIME_FORMAT)
-        LocalDateTime created,
-
-        Long event,
-        Long requester,
-        String status
+        @JsonFormat(pattern = DATE_TIME_FORMAT) LocalDateTime created,
+        Long event, Long requester, String status
 ) {
 }

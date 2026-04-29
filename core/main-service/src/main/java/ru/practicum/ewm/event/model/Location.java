@@ -7,13 +7,12 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Embeddable
-@Setter
 @Getter
+@Setter
 @ToString
 public class Location {
     @Column(nullable = false)
     private Double lat;
-
     @Column(nullable = false)
     private Double lon;
 }

@@ -15,8 +15,8 @@ import ru.practicum.ewm.sharing.constants.ApiPaths;
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping(ApiPaths.Public.EVENTS)
+@RequiredArgsConstructor
 @Validated
 @Slf4j
 public class PublicEventController {
@@ -33,23 +33,14 @@ public class PublicEventController {
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
             @RequestParam(defaultValue = "10") @Positive Integer size) {
-
-        log.info("PUBLIC: Get EVENTS with params [text '{}', categories '{}', paid '{}', rangeStart '{}', " +
-                        "rangeEnd '{}',  onlyAvailable '{}', sort '{}', from '{}', size '{}']",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
-        PublicSearchParams params = PublicSearchParams.of(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
-                sort, from, size);
-        List<EventDtoShort> result = eventService.get(params);
-        log.info("PUBLIC: Found {} EVENTS", result.size());
-        return result;
+        log.info("PUBLIC: Get events, from={}, size={}", from, size);
+        return eventService.get(PublicSearchParams.of(
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size));
     }
 
     @GetMapping("/{id}")
     public EventDtoExtended getEvent(@PathVariable @Positive Long id) {
-
-        log.info("PUBLIC: Get EVENT with commentId {}", id);
-        EventDtoExtended result = eventService.get(id);
-        log.info("PUBLIC: EVENT with commentId {} found", id);
-        return result;
+        log.info("PUBLIC: Get event {}", id);
+        return eventService.get(id);
     }
 }

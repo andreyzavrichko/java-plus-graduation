@@ -6,9 +6,9 @@ import ru.practicum.ewm.category.dto.CreateCategoryDto;
 import java.util.List;
 
 public interface CategoryService {
-    CategoryDto addCategory(CreateCategoryDto createCategoryDto);
+    CategoryDto addCategory(CreateCategoryDto dto);
 
-    CategoryDto updateCategory(Long id, CategoryDto categoryDto);
+    CategoryDto updateCategory(Long id, CategoryDto dto);
 
     CategoryDto getCategoryById(Long id);
 

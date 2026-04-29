@@ -13,7 +13,6 @@ import java.time.temporal.ChronoUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = {AtLeastHoursFromNowValidator.class})
 public @interface AtLeastHoursFromNow {
-
     String message() default "Event must be at least {hours} hours from now";
 
     Class<?>[] groups() default {};

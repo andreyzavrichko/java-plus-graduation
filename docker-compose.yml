@@ -1,5 +1,6 @@
 services:
 
+  # ─── Инфраструктура ────────────────────────────────────────────
   discovery-server:
     build: infra/discovery-server
     image: ewm-discovery-server
@@ -39,12 +40,22 @@ services:
     depends_on:
       config-server:
         condition: service_healthy
+      discovery-server:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
+    healthcheck:
+      test: wget -q --spider http://localhost:8080/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
-
+  # ─── Базы данных ───────────────────────────────────────────────
   stats-db:
     image: postgres:16.1
     container_name: stats-db-postgres
@@ -79,7 +90,58 @@ services:
       interval: 5s
       retries: 10
 
+  user-db:
+    image: postgres:16.1
+    container_name: user-db-postgres
+    volumes:
+      - ./core/user-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/03-schema.sql
+    ports:
+      - "6544:5432"
+    environment:
+      - POSTGRES_DB=ewm-users
+      - POSTGRES_USER=users
+      - POSTGRES_PASSWORD=users
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
 
+  request-db:
+    image: postgres:16.1
+    container_name: request-db-postgres
+    volumes:
+      - ./core/request-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/04-schema.sql
+    ports:
+      - "6545:5432"
+    environment:
+      - POSTGRES_DB=ewm-requests
+      - POSTGRES_USER=requests
+      - POSTGRES_PASSWORD=requests
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  extra-db:
+    image: postgres:16.1
+    container_name: extra-db-postgres
+    volumes:
+      - ./core/extra-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/05-schema.sql
+    ports:
+      - "6546:5432"
+    environment:
+      - POSTGRES_DB=ewm-extra
+      - POSTGRES_USER=extra
+      - POSTGRES_PASSWORD=extra
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  # ─── Сервисы ───────────────────────────────────────────────────
   stats-server:
     build: stats/stats-server
     image: ewm-stats-server
@@ -89,13 +151,17 @@ services:
         condition: service_healthy
       stats-db:
         condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - POSTGRES_HOST=stats-db
-      - POSTGRES_PORT=5432
       - POSTGRES_USER=stats
       - POSTGRES_PASSWORD=stats
-      - SPRING_SQL_INIT_MODE=always
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
   main-service:
     build: core/main-service
@@ -106,9 +172,61 @@ services:
         condition: service_healthy
       ewm-db:
         condition: service_healthy
+      discovery-server:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - POSTGRES_HOST=ewm-db
-      - POSTGRES_PORT=5432
       - POSTGRES_USER=main
       - POSTGRES_PASSWORD=main
+
+  user-service:
+    build: core/user-service
+    image: ewm-user-service
+    container_name: user-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - POSTGRES_HOST=user-db
+      - POSTGRES_USER=users
+      - POSTGRES_PASSWORD=users
+
+  request-service:
+    build: core/request-service
+    image: ewm-request-service
+    container_name: request-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      request-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - POSTGRES_HOST=request-db
+      - POSTGRES_USER=requests
+      - POSTGRES_PASSWORD=requests
+
+  extra-service:
+    build: core/extra-service
+    image: ewm-extra-service
+    container_name: extra-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      extra-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - POSTGRES_HOST=extra-db
+      - POSTGRES_USER=extra
+      - POSTGRES_PASSWORD=extra

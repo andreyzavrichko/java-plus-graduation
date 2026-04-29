@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: request-service
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      uri: http://${CONFIG_SERVER_URI:config-server}:8888
+      fail-fast: true
+      retry:
+        max-attempts: 6
+        initial-interval: 1500
