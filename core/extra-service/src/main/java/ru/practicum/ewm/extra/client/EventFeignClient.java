@@ -10,7 +10,7 @@ import ru.practicum.ewm.api.dto.EventInternalDto;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "main-service", fallback = EventFeignClientFallback.class)
+@FeignClient(name = "event-service", fallback = EventFeignClientFallback.class)
 public interface EventFeignClient {
     @GetMapping("/internal/events/{eventId}")
     EventInternalDto getEvent(@PathVariable("eventId") Long eventId);

@@ -44,7 +44,7 @@ resilience4j:
       user-service:
         maxAttempts: 3
         waitDuration: 1s
-      main-service:
+      event-service:
         maxAttempts: 3
         waitDuration: 1s
 

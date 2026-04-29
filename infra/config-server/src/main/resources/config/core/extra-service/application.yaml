@@ -29,7 +29,7 @@ eureka:
 resilience4j:
   circuitbreaker:
     instances:
-      main-service:
+      event-service:
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
@@ -46,7 +46,7 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
   retry:
     instances:
-      main-service:
+      event-service:
         maxAttempts: 3
         waitDuration: 1s
       request-service:

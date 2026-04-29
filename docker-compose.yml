@@ -165,8 +165,8 @@ services:
 
   main-service:
     build: core/main-service
-    image: ewm-main-service
-    container_name: main-service
+    image: ewm-event-service
+    container_name: event-service
     depends_on:
       config-server:
         condition: service_healthy

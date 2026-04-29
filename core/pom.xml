@@ -16,7 +16,7 @@
 
     <modules>
         <module>api-dto</module>
-        <module>main-service</module>
+        <module>event-service</module>
         <module>user-service</module>
         <module>request-service</module>
         <module>extra-service</module>
