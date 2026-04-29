@@ -124,17 +124,17 @@ services:
       interval: 5s
       retries: 10
 
-  extra-db:
+  compilation-db:
     image: postgres:16.1
-    container_name: extra-db-postgres
+    container_name: compilation-db-postgres
     volumes:
-      - ./core/extra-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/05-schema.sql
+      - ./core/compilation-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/05-schema.sql
     ports:
       - "6546:5432"
     environment:
-      - POSTGRES_DB=ewm-extra
-      - POSTGRES_USER=extra
-      - POSTGRES_PASSWORD=extra
+      - POSTGRES_DB=ewm-compilation
+      - POSTGRES_USER=compilation
+      - POSTGRES_PASSWORD=compilation
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -220,21 +220,21 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
-  extra-service:
-    build: core/extra-service
-    image: ewm-extra-service
-    container_name: extra-service
+  compilation-service:
+    build: core/compilation-service
+    image: ewm-compilation-service
+    container_name: compilation-service
     depends_on:
       config-server:
         condition: service_healthy
-      extra-db:
+      compilation-db:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - POSTGRES_HOST=extra-db
-      - POSTGRES_USER=extra
-      - POSTGRES_PASSWORD=extra
+      - POSTGRES_HOST=compilation-db
+      - POSTGRES_USER=compilation
+      - POSTGRES_PASSWORD=compilation
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false

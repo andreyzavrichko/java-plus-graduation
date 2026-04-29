@@ -19,17 +19,17 @@ spring:
             - Path=/users/*/requests, /users/*/requests/**
 
         - id: extra_service_compilations_route
-          uri: lb://extra-service
+          uri: lb://compilation-service
           predicates:
             - Path=/compilations/**, /admin/compilations/**
 
         - id: extra_service_comments_route
-          uri: lb://extra-service
+          uri: lb://compilation-service
           predicates:
             - Path=/events/*/comments/**, /admin/comments/**
 
         - id: extra_service_user_comments_route
-          uri: lb://extra-service
+          uri: lb://compilation-service
           predicates:
             - Path=/users/*/comments/**
 

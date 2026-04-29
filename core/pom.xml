@@ -19,6 +19,6 @@
         <module>event-service</module>
         <module>user-service</module>
         <module>request-service</module>
-        <module>extra-service</module>
+        <module>compilation-service</module>
     </modules>
 </project>
