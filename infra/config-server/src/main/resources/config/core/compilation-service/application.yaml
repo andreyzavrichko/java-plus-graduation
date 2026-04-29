@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:extra-db}:${POSTGRES_PORT:5432}/ewm-extra
-    username: ${POSTGRES_USER:extra}
-    password: ${POSTGRES_PASSWORD:extra}
+    url: jdbc:postgresql://${POSTGRES_HOST:compilation-db}:${POSTGRES_PORT:5432}/ewm-compilation
+    username: ${POSTGRES_USER:compilation}
+    password: ${POSTGRES_PASSWORD:compilation}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
