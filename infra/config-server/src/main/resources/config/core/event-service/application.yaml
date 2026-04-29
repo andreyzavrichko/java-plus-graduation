@@ -30,18 +30,15 @@ eureka:
     service-url:
       defaultZone: http://${EUREKA_HOST:discovery-server}:${EUREKA_PORT:8761}/eureka/
 
-# Resilience4j: circuit breaker для Feign-клиентов
 resilience4j:
   circuitbreaker:
     instances:
       user-service:
-        registerHealthIndicator: true
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
       request-service:
-        registerHealthIndicator: true
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
@@ -66,9 +63,14 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: false
 
 logging:
   level:
     root: INFO
     org.springframework.cloud.loadbalancer: DEBUG
-

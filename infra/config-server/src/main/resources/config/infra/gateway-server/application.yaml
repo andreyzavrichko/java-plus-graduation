@@ -8,46 +8,36 @@ spring:
         locator:
           enabled: true
       routes:
-        # ── user-service ──────────────────────────────────────────
         - id: user_service_admin_route
           uri: lb://user-service
           predicates:
             - Path=/admin/users/**
 
-        # ── request-service ───────────────────────────────────────
-        # ВАЖНО: до /users/** — перехватывает /users/{id}/requests/**
         - id: request_service_route
           uri: lb://request-service
           predicates:
             - Path=/users/*/requests, /users/*/requests/**
 
-        # ── extra-service ─────────────────────────────────────────
-        # Compilations
         - id: extra_service_compilations_route
           uri: lb://extra-service
           predicates:
             - Path=/compilations/**, /admin/compilations/**
 
-        # Comments (public + admin)
         - id: extra_service_comments_route
           uri: lb://extra-service
           predicates:
             - Path=/events/*/comments/**, /admin/comments/**
 
-        # Comments (private: /users/{id}/comments/**)
-        # ВАЖНО: до /users/** route
         - id: extra_service_user_comments_route
           uri: lb://extra-service
           predicates:
             - Path=/users/*/comments/**
 
-        # ── main-service ──────────────────────────────────────────
-        - id: main_service_route
-          uri: lb://main-service
+        - id: event_service_route
+          uri: lb://event-service
           predicates:
             - Path=/categories/**, /admin/categories/**, /admin/events/**, /users/**, /events/**
 
-        # ── stats-server ──────────────────────────────────────────
         - id: stats_server_route
           uri: lb://stats-server
           predicates:
@@ -61,7 +51,14 @@ management:
   endpoint:
     gateway:
       enabled: true
+    health:
+      show-details: always
   endpoints:
     web:
       exposure:
-        include: gateway,health
+        include: gateway,health,info
+  health:
+    circuitbreakers:
+      enabled: false
+    diskspace:
+      enabled: false
