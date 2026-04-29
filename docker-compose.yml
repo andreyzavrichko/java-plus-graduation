@@ -77,7 +77,7 @@ services:
     image: postgres:16.1
     container_name: ewm-db-postgres
     volumes:
-      - ./core/main-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./core/event-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
     ports:
       - "6543:5432"
     environment:
@@ -163,8 +163,8 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
-  main-service:
-    build: core/main-service
+  event-service:
+    build: core/event-service
     image: ewm-event-service
     container_name: event-service
     depends_on:
