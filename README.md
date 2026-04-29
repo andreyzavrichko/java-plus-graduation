@@ -25,11 +25,11 @@
 ```
 java-plus-graduation/
 ├── core/
-│   ├── api-dto           # Общие внутренние DTO и PageableFactory (shared lib)
-│   ├── main-service      # Управление мероприятиями и категориями
-│   ├── user-service      # Администрирование пользователей
-│   ├── request-service   # Управление заявками на участие
-│   └── extra-service     # Подборки (compilations) и комментарии
+│   ├── api-dto                 # Общие внутренние DTO и PageableFactory (shared lib)
+│   ├── event-service           # Управление мероприятиями и категориями
+│   ├── user-service            # Администрирование пользователей
+│   ├── request-service         # Управление заявками на участие
+│   └── compilation-service     # Подборки (compilations) и комментарии
 ├── stats/
 │   ├── stats-dto         # DTO сервиса статистики
 │   ├── stats-client      # HTTP-клиент для записи и чтения статистики
@@ -47,18 +47,18 @@ java-plus-graduation/
   │
   ▼
 Gateway (8080)
-  ├──► main-service      ──Feign──► user-service (internal)
+  ├──► event-service      ──Feign──► user-service (internal)
   │                      ──Feign──► request-service (internal)
   │                      ──HTTP───► stats-server (via DiscoveryClient)
   │
   ├──► user-service
   │
   ├──► request-service   ──Feign──► user-service (internal)
-  │                      ──Feign──► main-service (internal)
+  │                      ──Feign──► event-service (internal)
   │
-  ├──► extra-service     ──Feign──► main-service (internal)
-  │                      ──Feign──► user-service (internal)
-  │                      ──Feign──► request-service (internal)
+  ├──► compilation-service     ──Feign──► event-service (internal)
+  │                            ──Feign──► user-service (internal)
+  │                            ──Feign──► request-service (internal)
   │
   └──► stats-server
 ```
@@ -95,15 +95,15 @@ Gateway (8080)
 Каждый сервис имеет **собственную** базу данных — данные не разделяются.  
 Кросс-сервисные ссылки хранятся как `Long id` (без `@ManyToOne` и FK).
 
-| Сервис | БД | Порт (host) | Пользователь |
-|--------|----|-------------|--------------|
-| `main-service` | `ewm-main` | `ewm-db:5432` / `localhost:6543` | `main` |
-| `user-service` | `ewm-users` | `user-db:5432` / `localhost:6544` | `users` |
-| `request-service` | `ewm-requests` | `request-db:5432` / `localhost:6545` | `requests` |
-| `extra-service` | `ewm-extra` | `extra-db:5432` / `localhost:6546` | `extra` |
-| `stats-server` | `stats` | `stats-db:5432` / `localhost:6542` | `stats` |
+| Сервис                | БД | Порт (host) | Пользователь |
+|-----------------------|----|-------------|--------------|
+| `event-service`       | `ewm-main` | `ewm-db:5432` / `localhost:6543` | `main` |
+| `user-service`        | `ewm-users` | `user-db:5432` / `localhost:6544` | `users` |
+| `request-service`     | `ewm-requests` | `request-db:5432` / `localhost:6545` | `requests` |
+| `compilation-service` | `ewm-compilation` | `compilation-db:5432` / `localhost:6546` | `extra` |
+| `stats-server`        | `stats` | `stats-db:5432` / `localhost:6542` | `stats` |
 
-### Схема main-service (`ewm-main`)
+### Схема event-service (`ewm-event`)
 
 | Таблица | Описание |
 |---------|---------|
@@ -139,10 +139,10 @@ Gateway (8080)
 ```
 infra/config-server/src/main/resources/config/
 ├── core/
-│   ├── main-service/application.yaml
+│   ├── event-service/application.yaml
 │   ├── user-service/application.yaml
 │   ├── request-service/application.yaml
-│   └── extra-service/application.yaml
+│   └── compilation-service/application.yaml
 ├── stats/
 │   └── stats-server/application.yaml
 └── infra/
@@ -168,7 +168,7 @@ core/<service-name>/src/main/resources/application.yaml
 | `POST` | `/internal/users/batch` | Batch-получение пользователей `List<Long>` → `Map<Long, UserInternalDto>` | `main-service`, `extra-service` |
 | `GET` | `/internal/users/exists/{userId}` | Проверить существование пользователя | `request-service` |
 
-### main-service → `/internal/events`
+### event-service → `/internal/events`
 
 | Метод | Путь | Описание | Используется в |
 |-------|------|----------|---------------|
