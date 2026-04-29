@@ -179,6 +179,8 @@ services:
       - POSTGRES_HOST=ewm-db
       - POSTGRES_USER=main
       - POSTGRES_PASSWORD=main
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
   user-service:
     build: core/user-service
@@ -196,6 +198,8 @@ services:
       - POSTGRES_HOST=user-db
       - POSTGRES_USER=users
       - POSTGRES_PASSWORD=users
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
   request-service:
     build: core/request-service
@@ -213,6 +217,8 @@ services:
       - POSTGRES_HOST=request-db
       - POSTGRES_USER=requests
       - POSTGRES_PASSWORD=requests
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
 
   extra-service:
     build: core/extra-service
@@ -230,3 +236,5 @@ services:
       - POSTGRES_HOST=extra-db
       - POSTGRES_USER=extra
       - POSTGRES_PASSWORD=extra
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_DISCOVERY_ENABLED=false
