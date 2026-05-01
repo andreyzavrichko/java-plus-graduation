@@ -1,5 +1,5 @@
 server:
-  port: 0
+  port: 9090
 
 spring:
   datasource:
@@ -11,6 +11,17 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:discovery-server}:${EUREKA_PORT:8761}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 logging:
   level:

@@ -33,10 +33,10 @@ public class StatsClient {
         this.retryTemplate = buildRetryTemplate();
     }
 
-    public ResponseEntity<HitDto> createHit(CreateHitDto createDto) {
+    public void createHit(CreateHitDto createDto) {
         URI uri = makeUri("/hit");
         HttpEntity<CreateHitDto> requestEntity = new HttpEntity<>(createDto, defaultHeaders());
-        return rest.exchange(uri, HttpMethod.POST, requestEntity, HitDto.class);
+        rest.exchange(uri, HttpMethod.POST, requestEntity, HitDto.class);
     }
 
     public ResponseEntity<List<ViewStatsDto>> getStats(

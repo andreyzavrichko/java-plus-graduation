@@ -1,0 +1,15 @@
+
+spring:
+  application:
+    name: stats-server
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        use-random-policy: true
+        max-interval: 6000
+      discovery:
+        enabled: true
+        service-id: config-server

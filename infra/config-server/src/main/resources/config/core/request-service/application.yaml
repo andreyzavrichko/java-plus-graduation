@@ -1,0 +1,68 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:request-db}:${POSTGRES_PORT:5432}/ewm-requests
+    username: ${POSTGRES_USER:requests}
+    password: ${POSTGRES_PASSWORD:requests}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      properties:
+        hibernate:
+          format_sql: true
+          show_sql: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:discovery-server}:${EUREKA_PORT:8761}/eureka/
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+      event-service:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      user-service:
+        maxAttempts: 3
+        waitDuration: 1s
+      event-service:
+        maxAttempts: 3
+        waitDuration: 1s
+
+feign:
+  okhttp:
+    enabled: true
+  circuitbreaker:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
