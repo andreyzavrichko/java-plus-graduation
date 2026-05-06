@@ -6,10 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.api.dto.EventInternalDto;
 import ru.practicum.ewm.api.dto.enums.EventStateInternal;
+import ru.practicum.ewm.grpc.CollectorGrpcClient;
 import ru.practicum.ewm.request.client.EventFeignClient;
 import ru.practicum.ewm.request.client.UserFeignClient;
-import ru.practicum.ewm.request.dto.*;
-import ru.practicum.ewm.request.exception.*;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.request.exception.AccessException;
+import ru.practicum.ewm.request.exception.ConflictException;
+import ru.practicum.ewm.request.exception.NotFoundException;
 import ru.practicum.ewm.request.mapper.RequestMapper;
 import ru.practicum.ewm.request.model.ParticipationRequest;
 import ru.practicum.ewm.request.model.RequestStatus;
@@ -30,40 +35,33 @@ public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
     private final UserFeignClient userFeignClient;
     private final EventFeignClient eventFeignClient;
+    private final CollectorGrpcClient collectorClient;
 
     @Override
     @Transactional
     public ParticipationRequestDto create(Long userId, Long eventId) {
-        if (!userFeignClient.exists(userId)) {
+        if (!userFeignClient.exists(userId))
             throw new NotFoundException("User %d not found".formatted(userId));
-        }
 
         EventInternalDto event = eventFeignClient.getEvent(eventId);
 
-        if (event.state() != EventStateInternal.PUBLISHED) {
+        if (event.state() != EventStateInternal.PUBLISHED)
             throw new ConflictException(
                     "Cannot participate: event %d is not published (state=%s)"
                             .formatted(eventId, event.state()));
-        }
-        if (event.initiatorId().equals(userId)) {
+        if (event.initiatorId().equals(userId))
             throw new ConflictException(
-                    "User %d cannot participate in their own event %d"
-                            .formatted(userId, eventId));
-        }
-        if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
+                    "User %d cannot participate in their own event %d".formatted(userId, eventId));
+        if (requestRepository.existsByEventIdAndRequesterId(eventId, userId))
             throw new ConflictException(
-                    "User %d already has a request for event %d"
-                            .formatted(userId, eventId));
-        }
+                    "User %d already has a request for event %d".formatted(userId, eventId));
 
         long confirmed = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
         int limit = event.participantLimit();
 
-        if (limit > 0 && !event.requestModeration() && confirmed >= limit) {
+        if (limit > 0 && !event.requestModeration() && confirmed >= limit)
             throw new ConflictException(
-                    "Event %d has reached participant limit (%d/%d)"
-                            .formatted(eventId, confirmed, limit));
-        }
+                    "Event %d has reached participant limit (%d/%d)".formatted(eventId, confirmed, limit));
 
         RequestStatus status = (!event.requestModeration() || limit == 0)
                 ? RequestStatus.CONFIRMED
@@ -76,14 +74,19 @@ public class RequestServiceImpl implements RequestService {
                 .status(status)
                 .build();
 
-        return requestMapper.toDto(requestRepository.save(req));
+        ParticipationRequest saved = requestRepository.save(req);
+
+        if (saved.getStatus() == RequestStatus.CONFIRMED) {
+            collectorClient.sendRegister(userId, eventId);
+        }
+
+        return requestMapper.toDto(saved);
     }
 
     @Override
     public List<ParticipationRequestDto> get(Long userId) {
-        if (!userFeignClient.exists(userId)) {
+        if (!userFeignClient.exists(userId))
             throw new NotFoundException("User %d not found".formatted(userId));
-        }
         return requestRepository.findAllByRequesterId(userId)
                 .stream().map(requestMapper::toDto).toList();
     }
@@ -92,14 +95,11 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public ParticipationRequestDto cancel(Long userId, Long requestId) {
         ParticipationRequest req = findOrThrow(requestId);
-        if (!req.getRequesterId().equals(userId)) {
-            throw new AccessException(
-                    "User %d is not requester of request %d".formatted(userId, requestId));
-        }
+        if (!req.getRequesterId().equals(userId))
+            throw new AccessException("User %d is not requester of request %d".formatted(userId, requestId));
         req.setStatus(RequestStatus.CANCELED);
         return requestMapper.toDto(requestRepository.save(req));
     }
-
 
     @Override
     public List<ParticipationRequestDto> getByEvent(Long eventId) {
@@ -118,19 +118,16 @@ public class RequestServiceImpl implements RequestService {
 
         List<ParticipationRequest> requests = requestRepository.findAllById(body.requestIds());
         List<ParticipationRequest> toConfirm = new ArrayList<>();
-        List<ParticipationRequest> toReject  = new ArrayList<>();
+        List<ParticipationRequest> toReject = new ArrayList<>();
 
         for (ParticipationRequest req : requests) {
-            if (req.getStatus() != RequestStatus.PENDING) {
+            if (req.getStatus() != RequestStatus.PENDING)
                 throw new ConflictException(
-                        "Request %d is not PENDING (current: %s)"
-                                .formatted(req.getId(), req.getStatus()));
-            }
+                        "Request %d is not PENDING (current: %s)".formatted(req.getId(), req.getStatus()));
+
             if (body.status() == RequestStatus.CONFIRMED) {
-                if (limit > 0 && confirmed >= limit) {
-                    throw new ConflictException(
-                            "Participant limit reached for event %d".formatted(eventId));
-                }
+                if (limit > 0 && confirmed >= limit)
+                    throw new ConflictException("Participant limit reached for event %d".formatted(eventId));
                 req.setStatus(RequestStatus.CONFIRMED);
                 toConfirm.add(req);
                 confirmed++;
@@ -140,6 +137,9 @@ public class RequestServiceImpl implements RequestService {
             }
         }
         requestRepository.saveAll(requests);
+
+        toConfirm.forEach(req ->
+                collectorClient.sendRegister(req.getRequesterId(), eventId));
 
         return new EventRequestStatusUpdateResult(
                 toConfirm.stream().map(requestMapper::toDto).toList(),
@@ -151,6 +151,11 @@ public class RequestServiceImpl implements RequestService {
         return requestRepository.getConfirmedRequestsCounts(eventIds);
     }
 
+    @Override
+    public boolean hasConfirmedRequest(Long eventId, Long userId) {
+        return requestRepository.existsByEventIdAndRequesterIdAndStatus(
+                eventId, userId, RequestStatus.CONFIRMED);
+    }
 
     private ParticipationRequest findOrThrow(Long id) {
         return requestRepository.findById(id)

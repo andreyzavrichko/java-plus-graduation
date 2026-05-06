@@ -13,15 +13,18 @@ import java.util.Map;
 public interface RequestFeignClient {
 
     @GetMapping("/internal/requests/events/{eventId}")
-    List<ParticipationRequestDto> getByEvent(@PathVariable("eventId") Long eventId);
+    List<ParticipationRequestDto> getByEvent(@PathVariable Long eventId);
 
     @PostMapping("/internal/requests/events/{eventId}/update-statuses")
     EventRequestStatusUpdateResult updateStatuses(
-            @RequestParam("userId") Long userId,
-            @PathVariable("eventId") Long eventId,
-            @RequestParam("participantLimit") Integer participantLimit,
+            @RequestParam Long userId,
+            @PathVariable Long eventId,
+            @RequestParam(defaultValue = "0") Integer participantLimit,
             @RequestBody EventRequestStatusUpdateRequest body);
 
     @PostMapping("/internal/requests/confirmed-counts")
     Map<Long, Long> confirmedCounts(@RequestBody List<Long> eventIds);
+
+    @GetMapping("/internal/requests/events/{eventId}/confirmed/{userId}")
+    boolean hasConfirmedRequest(@PathVariable Long eventId, @PathVariable Long userId);
 }

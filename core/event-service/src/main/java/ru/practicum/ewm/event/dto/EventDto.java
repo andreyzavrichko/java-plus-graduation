@@ -18,6 +18,7 @@ public record EventDto(
         Long id, UserShortDto initiator, Location location,
         Boolean paid, Integer participantLimit,
         @JsonFormat(pattern = DATE_TIME_FORMAT) LocalDateTime publishedOn,
-        Boolean requestModeration, State state, String title, Long views
+        Boolean requestModeration, State state, String title,
+        Double rating
 ) {
 }

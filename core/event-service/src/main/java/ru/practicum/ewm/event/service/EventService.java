@@ -17,6 +17,7 @@ import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import java.util.List;
 
 public interface EventService {
+
     EventDto create(CreateEventDto dto);
 
     EventDto update(UpdateEventDto dto);
@@ -25,6 +26,8 @@ public interface EventService {
 
     EventDtoExtended get(Long id);
 
+    EventDtoExtended getWithUserId(Long id, Long userId);
+
     EventDtoExtended get(EventParams params);
 
     List<EventDtoShortWithoutViews> get(EventParamsSorted params);
@@ -32,6 +35,10 @@ public interface EventService {
     List<EventDtoExtended> get(AdminSearchParams params);
 
     List<EventDtoShort> get(PublicSearchParams params);
+
+    List<EventDtoShort> getRecommendations(Long userId);
+
+    void likeEvent(Long eventId, Long userId);
 
     List<ParticipationRequestDto> getEventRequests(EventParams params);
 

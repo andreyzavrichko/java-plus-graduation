@@ -9,7 +9,6 @@ import java.util.Map;
 
 public interface RequestService {
 
-
     ParticipationRequestDto create(Long userId, Long eventId);
 
     List<ParticipationRequestDto> get(Long userId);
@@ -23,4 +22,6 @@ public interface RequestService {
             EventRequestStatusUpdateRequest request);
 
     Map<Long, Long> confirmedCounts(List<Long> eventIds);
+
+    boolean hasConfirmedRequest(Long eventId, Long userId);
 }

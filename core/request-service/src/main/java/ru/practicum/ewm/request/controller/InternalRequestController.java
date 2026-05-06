@@ -37,4 +37,11 @@ public class InternalRequestController {
     public Map<Long, Long> confirmedCounts(@RequestBody List<Long> eventIds) {
         return service.confirmedCounts(eventIds);
     }
+
+    @GetMapping("/events/{eventId}/confirmed/{userId}")
+    public boolean hasConfirmedRequest(
+            @PathVariable Long eventId,
+            @PathVariable Long userId) {
+        return service.hasConfirmedRequest(eventId, userId);
+    }
 }
