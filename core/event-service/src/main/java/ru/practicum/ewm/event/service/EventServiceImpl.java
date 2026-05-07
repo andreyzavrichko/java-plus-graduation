@@ -210,7 +210,6 @@ public class EventServiceImpl implements EventService {
 
 
     @Override
-    @Transactional
     public void likeEvent(Long eventId, Long userId) {
         findPublishedOrThrow(eventId);
         boolean participated = requestFeignClient.hasConfirmedRequest(eventId, userId);

@@ -76,33 +76,33 @@ public class RecommendationService {
 
     public List<Map.Entry<Long, Double>> getRecommendationsForUser(long userId, int maxResults) {
         log.info("getRecommendationsForUser: userId={}, maxResults={}", userId, maxResults);
-        int recentLimit = maxResults * 3;
 
         List<UserEventInteraction> recent = interactionRepo.findRecentByUserId(
-                userId, PageRequest.of(0, recentLimit));
+                userId, PageRequest.of(0, maxResults * 3));
         if (recent.isEmpty()) {
             log.info("getRecommendationsForUser: no interactions for userId={}, returning empty", userId);
             return List.of();
         }
-        log.debug("getRecommendationsForUser: userId={} has {} recent interactions", userId, recent.size());
 
         Set<Long> visitedIds = interactionRepo.findEventIdsByUserId(userId);
+        log.debug("getRecommendationsForUser: userId={} has {} interactions, {} visited",
+                userId, recent.size(), visitedIds.size());
+
+        List<EventSimilarity> allSimilar = similarityRepo.findByEventIdsIn(visitedIds);
+        log.debug("getRecommendationsForUser: loaded {} similarity records in batch", allSimilar.size());
+
 
         Map<Long, Double> candidates = new LinkedHashMap<>();
-        for (UserEventInteraction visited : recent) {
-            long visitedEventId = visited.getId().getEventId();
-            List<EventSimilarity> similar = similarityRepo.findByEventIdOrderByScoreDesc(
-                    visitedEventId, PageRequest.of(0, maxResults * 2));
-            for (EventSimilarity sim : similar) {
-                long otherId = sim.getId().getEventA() == visitedEventId
-                        ? sim.getId().getEventB()
-                        : sim.getId().getEventA();
-                if (!visitedIds.contains(otherId)) {
-                    candidates.merge(otherId, sim.getScore(), Math::max);
-                }
+        for (EventSimilarity sim : allSimilar) {
+            long a = sim.getId().getEventA();
+            long b = sim.getId().getEventB();
+            if (visitedIds.contains(a) && !visitedIds.contains(b)) {
+                candidates.merge(b, sim.getScore(), Math::max);
+            } else if (visitedIds.contains(b) && !visitedIds.contains(a)) {
+                candidates.merge(a, sim.getScore(), Math::max);
             }
         }
-        log.debug("getRecommendationsForUser: userId={} found {} candidate events", userId, candidates.size());
+        log.debug("getRecommendationsForUser: userId={} found {} candidates", userId, candidates.size());
 
         List<Long> topCandidates = candidates.entrySet().stream()
                 .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
@@ -120,13 +120,22 @@ public class RecommendationService {
                         i -> i.getId().getEventId(),
                         UserEventInteraction::getWeight));
 
+
+        List<EventSimilarity> allNeighbors = similarityRepo.findNeighborsBatch(topCandidates, visitedIds);
+        log.debug("getRecommendationsForUser: loaded {} neighbor records in batch", allNeighbors.size());
+
+
+        Map<Long, List<EventSimilarity>> neighborsByCandidateId = new HashMap<>();
+        for (EventSimilarity n : allNeighbors) {
+            long a = n.getId().getEventA();
+            long b = n.getId().getEventB();
+            if (topCandidates.contains(a)) neighborsByCandidateId.computeIfAbsent(a, k -> new ArrayList<>()).add(n);
+            if (topCandidates.contains(b)) neighborsByCandidateId.computeIfAbsent(b, k -> new ArrayList<>()).add(n);
+        }
+
         List<Map.Entry<Long, Double>> result = new ArrayList<>();
         for (long candidateId : topCandidates) {
-            int kNeighbors = Math.min(10, visitedIds.size());
-            List<Long> visitedList = new ArrayList<>(visitedIds);
-            List<EventSimilarity> neighbors = similarityRepo.findNeighbors(
-                    candidateId, visitedList, PageRequest.of(0, kNeighbors));
-
+            List<EventSimilarity> neighbors = neighborsByCandidateId.getOrDefault(candidateId, List.of());
             double numerator = 0.0;
             double denominator = 0.0;
             for (EventSimilarity n : neighbors) {
@@ -138,13 +147,10 @@ public class RecommendationService {
                 numerator += simScore * userWeight;
                 denominator += simScore;
             }
-
             if (denominator > 0) {
                 double score = numerator / denominator;
                 log.debug("getRecommendationsForUser: candidateId={} score={}", candidateId, score);
                 result.add(Map.entry(candidateId, score));
-            } else {
-                log.debug("getRecommendationsForUser: candidateId={} skipped (denominator=0)", candidateId);
             }
         }
 
