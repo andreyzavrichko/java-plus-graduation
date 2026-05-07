@@ -14,12 +14,13 @@ public interface RequestRepository extends JpaRepository<ParticipationRequest, L
 
     boolean existsByEventIdAndRequesterId(Long eventId, Long requesterId);
 
+    boolean existsByEventIdAndRequesterIdAndStatus(Long eventId, Long requesterId, RequestStatus status); // добавить
+
     List<ParticipationRequest> findAllByRequesterId(Long requesterId);
 
     long countByEventIdAndStatus(Long eventId, RequestStatus status);
 
     List<ParticipationRequest> findAllByEventId(Long eventId);
-
 
     @Query("SELECT r.eventId, COUNT(r) FROM ParticipationRequest r " +
             "WHERE r.eventId IN :ids AND r.status = 'CONFIRMED' GROUP BY r.eventId")

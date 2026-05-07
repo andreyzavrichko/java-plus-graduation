@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventDtoExtended;
@@ -20,6 +21,7 @@ import java.util.List;
 @Validated
 @Slf4j
 public class PublicEventController {
+
     private final EventService eventService;
 
     @GetMapping
@@ -38,9 +40,33 @@ public class PublicEventController {
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size));
     }
 
+
     @GetMapping("/{id}")
-    public EventDtoExtended getEvent(@PathVariable @Positive Long id) {
-        log.info("PUBLIC: Get event {}", id);
+    public EventDtoExtended getEvent(
+            @PathVariable @Positive Long id,
+            @RequestHeader(value = "X-EWM-USER-ID", required = false) Long userId) {
+        log.info("PUBLIC: Get event {}, userId={}", id, userId);
+        if (userId != null) {
+            return eventService.getWithUserId(id, userId);
+        }
         return eventService.get(id);
+    }
+
+
+    @GetMapping("/recommendations")
+    public List<EventDtoShort> getRecommendations(
+            @RequestHeader("X-EWM-USER-ID") Long userId) {
+        log.info("PUBLIC: Get recommendations for userId={}", userId);
+        return eventService.getRecommendations(userId);
+    }
+
+
+    @PutMapping("/{eventId}/like")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void likeEvent(
+            @PathVariable @Positive Long eventId,
+            @RequestHeader("X-EWM-USER-ID") Long userId) {
+        log.info("PUBLIC: Like event {} by userId={}", eventId, userId);
+        eventService.likeEvent(eventId, userId);
     }
 }

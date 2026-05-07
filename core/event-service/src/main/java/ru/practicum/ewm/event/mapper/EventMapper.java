@@ -17,45 +17,49 @@ import static ru.practicum.ewm.event.model.State.DEFAULT_STATE;
 @Mapper(componentModel = "spring", uses = {LocationMapper.class, CategoryMapper.class})
 public interface EventMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdOn", ignore = true)
-    @Mapping(target = "initiatorId", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    @Mapping(target = "publishedOn", ignore = true)
-    @Mapping(target = "state", constant = DEFAULT_STATE)
+    @Mapping(target = "id",                ignore = true)
+    @Mapping(target = "createdOn",         ignore = true)
+    @Mapping(target = "initiatorId",       ignore = true)
+    @Mapping(target = "category",          ignore = true)
+    @Mapping(target = "publishedOn",       ignore = true)
+    @Mapping(target = "state",             constant = DEFAULT_STATE)
     @Mapping(target = "requestModeration", source = "requestModeration", defaultValue = "true")
-    @Mapping(target = "paid", source = "paid", defaultValue = "false")
-    @Mapping(target = "participantLimit", source = "participantLimit", defaultValue = "0")
+    @Mapping(target = "paid",              source = "paid",              defaultValue = "false")
+    @Mapping(target = "participantLimit",  source = "participantLimit",  defaultValue = "0")
     Event toEntity(CreateEventDto dto);
 
-    @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "id",        source = "event.id")
     @Mapping(target = "initiator", source = "initiator")
+    @Mapping(target = "rating",    ignore = true)
     EventDto toDto(Event event, UserShortDto initiator);
 
-    @Mapping(target = "id", source = "event.id")
-    @Mapping(target = "views", source = "views")
+    @Mapping(target = "id",               source = "event.id")
+    @Mapping(target = "rating",           source = "rating")
     @Mapping(target = "confirmedRequests", source = "confirmedRequests")
-    @Mapping(target = "initiator", source = "initiator")
-    EventDtoExtended toExtendedDto(Event event, UserShortDto initiator, Long views, Long confirmedRequests);
+    @Mapping(target = "initiator",        source = "initiator")
+    EventDtoExtended toExtendedDto(Event event, UserShortDto initiator,
+                                   Double rating, Long confirmedRequests);
 
-    @Mapping(target = "id", source = "event.id")
-    @Mapping(target = "views", source = "views")
+    @Mapping(target = "id",               source = "event.id")
+    @Mapping(target = "rating",           source = "rating")
     @Mapping(target = "confirmedRequests", source = "confirmedRequests")
-    @Mapping(target = "initiator", source = "initiator")
-    EventDtoShort toDtoShort(Event event, UserShortDto initiator, Long views, Long confirmedRequests);
+    @Mapping(target = "initiator",        source = "initiator")
+    EventDtoShort toDtoShort(Event event, UserShortDto initiator,
+                             Double rating, Long confirmedRequests);
 
-    @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "id",               source = "event.id")
     @Mapping(target = "confirmedRequests", source = "confirmedRequests")
-    @Mapping(target = "initiator", source = "initiator")
-    EventDtoShortWithoutViews toDtoShortWithoutViews(Event event, UserShortDto initiator, Long confirmedRequests);
+    @Mapping(target = "initiator",        source = "initiator")
+    EventDtoShortWithoutViews toDtoShortWithoutViews(Event event, UserShortDto initiator,
+                                                     Long confirmedRequests);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdOn", ignore = true)
-    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "id",          ignore = true)
+    @Mapping(target = "createdOn",   ignore = true)
+    @Mapping(target = "category",    ignore = true)
     @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "initiatorId", ignore = true)
-    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "state",       ignore = true)
     void updateEntity(UpdateEventDto dto, @MappingTarget Event event);
 
     default UserShortDto toUserShort(UserInternalDto dto) {

@@ -12,6 +12,7 @@ public record EventDtoShort(
         Long id, String annotation, CategoryDto category,
         Long confirmedRequests,
         @JsonFormat(pattern = DATE_TIME_FORMAT) LocalDateTime eventDate,
-        UserShortDto initiator, Boolean paid, String title, Long views
+        UserShortDto initiator, Boolean paid, String title,
+        Double rating
 ) {
 }

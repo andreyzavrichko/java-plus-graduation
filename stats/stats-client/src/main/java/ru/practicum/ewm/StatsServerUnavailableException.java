@@ -6,7 +6,4 @@ public class StatsServerUnavailableException extends RuntimeException {
         super(message);
     }
 
-    public StatsServerUnavailableException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
